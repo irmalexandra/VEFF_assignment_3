@@ -1,7 +1,28 @@
+// database //
+// -------------------------------------------------------------------------------------//
+
+//The following is an example of an array of two events.
+var events = [
+    { id: 0, name: "The Whistlers", description: "Romania, 2019, 97 minutes", location: "Bio Paradís, Salur 1", capacity: 40, startDate: new Date(Date.UTC(2020, 02, 03, 22, 0)), endDate: new Date(Date.UTC(2020, 02, 03, 23, 45)), bookings: [0,1,2] },
+    { id: 1, name: "HarpFusion: Bach to the Future", description: "Harp ensemble", location: "Harpa, Hörpuhorn", capacity: 100, startDate: new Date(Date.UTC(2020, 02, 12, 15, 0)), endDate: new Date(Date.UTC(2020, 02, 12, 16, 0)), bookings: [3] }
+];
+
+//The following is an example of an array of three bookings.
+var bookings = [
+    { id: 0, firstName: "John", lastName: "Doe", tel: "+3541234567", email: "", spots: 3},
+    { id: 1, firstName: "Jane", lastName: "Doe", tel: "", email: "jane@doe.doe", spots: 1},
+    { id: 2, firstName: "Meðaljón", lastName: "Jónsson", tel: "+3541111111", email: "mj@test.is", spots: 5},
+    { id: 3, firstName: "Rikki", lastName: "Rikkisson", tel: "+35312345", email: "rikki@besti.is", spots: 1}
+];
+
+
+
 const express = require('express');
 const server = express();
-
+const bodyParser = require('body-parser');
 const requester = require("axios");
+
+server.use(bodyParser.json());
 
 const hostname = 'localhost';
 const port = 3232;
@@ -62,13 +83,13 @@ function findBooking(bookingsIDArr, id){
 
 function createEvent(eventDetails){
     if (validateCreateInfo(eventDetails)){
-        var dateArr = createParams.startDate.split(" ");
+        var dateArr = eventDetails.startDate.split(" ");
         var sdate = dateArr[0]
         var stime = dateArr[1]
         var startDate = sdate.split("-");
         var startTime = stime.split(":");
 
-        var dateArr = createParams.startDate.split(" ");
+        var dateArr = eventDetails.endDate.split(" ");
         var edate = dateArr[0]
         var etime = dateArr[1]
         var endDate = edate.split("-");
@@ -80,21 +101,22 @@ function createEvent(eventDetails){
             location: eventDetails.location,
             capacity: parseInt(eventDetails.capacity),
             startDate: new Date(Date.UTC(
-                parseInt(startDate[0]),
-                parseInt(startDate[1]),
-                parseInt(startDate[2]),
-                parseInt(startTime[0]),
-                parseInt(startTime[1])
+                parseInt(startDate[0]), // Year
+                parseInt(startDate[1]), // Month
+                parseInt(startDate[2]), // Date
+                parseInt(startTime[0]), // Hours
+                parseInt(startTime[1])  // Minutes
             )),
             endDate: new Date(Date.UTC(
-                parseInt(endDate[0]),
-                parseInt(endDate[1]),
-                parseInt(endDate[2]),
-                parseInt(endTime[0]),
-                parseInt(endTime[1])
+                parseInt(endDate[0]), // Year
+                parseInt(endDate[1]), // Month
+                parseInt(endDate[2]), // Date
+                parseInt(endTime[0]), // Hours
+                parseInt(endTime[1])  // Minutes
             )),
             bookings: []
         };
+        events.push(event)
         return event
     }
     else{
@@ -102,39 +124,15 @@ function createEvent(eventDetails){
     }
 }
 
-testDate = Date()
-testDate.
 
 function validateCreateInfo(createParams){
-    var isNaN = Number.isNaN(createParams.capacity);
-    var dateArr = createParams.startDate.split(" ");
-    var sdate = dateArr[0]
-    var stime = dateArr[1]
-    var startDate = sdate.split("-");
-    var startTime = stime.split(":");
+    const validStartDate = (new Date(createParams.startDate)).getTime() > 0;
 
-    const validStartDate = Date.UTC(
-        parseInt(startDate[0]),
-        parseInt(startDate[1]),
-        parseInt(startDate[2]),
-        parseInt(startTime[0]),
-        parseInt(startTime[1])).getTime() > 0;
-
-    var dateArr = createParams.startDate.split(" ");
-    var edate = dateArr[0]
-    var etime = dateArr[1]
-    var endDate = edate.split("-");
-    var endTime = etime.split(":");
-    const validEndDate = Date.UTC(
-        parseInt(endDate[0]),
-        parseInt(endDate[1]),
-        parseInt(endDate[2]),
-        parseInt(endTime[3]),
-        parseInt(endTime[4])).getTime() > 0;
+    const validEndDate = (new Date(createParams.endDate)).getTime() > 0;
 
     const validCap = Number.isInteger(parseInt(createParams.capacity))
 
-    if(isNaN === false && validStartDate && validEndDate && validCap){return true}
+    if(validStartDate && validEndDate && validCap){return true}
     return false
 }
 
@@ -142,16 +140,6 @@ function generateEventID(){
     return events.length
 }
 
-const createParams = {
-    name: "The Wolf of Wall street",
-    capacity: 30,
-    startDate: "2020-03-10 22:00:00",
-    endDate: "2020-03-10 00:00:00",
-    description: "Based on the true story of Jordan Belfort",
-    location: "Bio Paradís, Salur 4"
-}
-
-console.log(createEvent(createParams))
 // Endpoints //
 // ---------------------------------------------------------------------//
 
@@ -183,15 +171,28 @@ server.get("/api/v1/events/event/:eventID/bookings", (req, res) => {
     res.status(200).send(eventBookingsArr);
 });
 
+server.post("/api/v1/events/createEvent", (req, res) => {
+    var eventParams = req.body;
+    var retEvent = createEvent(eventParams);
+    console.log('RetEvent: ' + retEvent);
+    if(retEvent !== -1){
+        res.status(200).send(retEvent)
+    }
+    else{
+        res.status(400).send(retEvent)
+    }
+});
+
+
 // Read Individual Booking
 server.get("/api/v1/events/event/:eventID/bookings/booking/:bookingID", (req, res) => {
     eventID = req.params.eventID;
-    if (findEvent(eventID) != -1) {
+    if (findEvent(eventID) !== -1) {
         var bookingID = req.params.bookingID;
         var eventObj = findEvent(eventID);
         var bookingsIDArr = eventObj.bookings;
         var booking = findBooking(bookingsIDArr, bookingID);
-        if (booking != -1){
+        if (booking !== -1){
             res.status(200).send(booking);
         }
         else {
@@ -209,7 +210,7 @@ server.use("*", (req, res) => {
 });
 
 server.get("/api/v1/events/create", (req, res) => {
-    eventList = makeEventList();
+    var eventList = makeEventList();
     res.status(200).send(eventList);
 });
 
@@ -218,60 +219,62 @@ server.get("/api/v1/events/create", (req, res) => {
 // requests //
 // ----------------------------------------------------------------------- //
 
-requester.get(url + "events", {  
-}) 
+requester.post(url + "events/createEvent",{
+    name: "The Wolf of Wall Street",
+    capacity: "40",
+    startDate: "2020-03-10 22:30:00",
+    endDate: "2020-03-11 00:45:00",
+    description: "Based on the true story of Jordan Belfort",
+    location: "Egilshöll Salur 1"})
+    .then((res) => {
+        console.log("Specific booking for event: \n" + res.data)
+    })
+    .catch((error) => {
+        console.log("create event response error");
+        console.log("error res is: " + error)
+    });
+
+
+
+requester.get(url + "events", {
+})
 .then((res) => {
     console.log("get response is working");
     console.log("Event list: \n" + res.data)
 })
-.catch((error) =>{
-    console.log("event list response error");
-    console.log("error res: " + error)
-})
-
-requester.get(url + "events/event/1") 
-.then((res) => {
-    console.log("Specific event: \n" + res.data)
-})
-.catch((error) =>{
-    console.log("specific event response error");
-    console.log("error res is: " + error)
-});
-
-requester.get(url + "events/event/0/bookings") 
-.then((res) => {
-    console.log("Bookings for event: \n" + res.data)
-})
-.catch((error) =>{
-    console.log("bookings for event response error");
-    console.log("error res is: " + error)
-});
-
-requester.get(url + "events/event/1/bookings/booking/3") 
-.then((res) => {
-    console.log("Specific booking for event: \n" + res.data)
-})
-.catch((error) => {
-    console.log("specific booking response error");
-    console.log("error res is: " + error)
-});
-
-
+// .catch((error) =>{
+//     console.log("event list response error");
+//     console.log("error res: " + error)
+// })
+//
+// requester.get(url + "events/event/1")
+// .then((res) => {
+//     console.log("Specific event: \n" + res.data)
+// })
+// .catch((error) =>{
+//     console.log("specific event response error");
+//     console.log("error res is: " + error)
+// });
+//
+// requester.get(url + "events/event/0/bookings")
+// .then((res) => {
+//     console.log("Bookings for event: \n" + res.data)
+// })
+// .catch((error) =>{
+//     console.log("bookings for event response error");
+//     console.log("error res is: " + error)
+// });
+//
+// requester.get(url + "events/event/1/bookings/booking/3")
+// .then((res) => {
+//     console.log("Specific booking for event: \n" + res.data)
+// })
+// .catch((error) => {
+//     console.log("specific booking response error");
+//     console.log("error res is: " + error)
+// });
 
 
-// database //
-// -------------------------------------------------------------------------------------//
 
-//The following is an example of an array of two events. 
-var events = [
-    { id: 0, name: "The Whistlers", description: "Romania, 2019, 97 minutes", location: "Bio Paradís, Salur 1", capacity: 40, startDate: new Date(Date.UTC(2020, 02, 03, 22, 0)), endDate: new Date(Date.UTC(2020, 02, 03, 23, 45)), bookings: [0,1,2] },
-    { id: 1, name: "HarpFusion: Bach to the Future", description: "Harp ensemble", location: "Harpa, Hörpuhorn", capacity: 100, startDate: new Date(Date.UTC(2020, 02, 12, 15, 0)), endDate: new Date(Date.UTC(2020, 02, 12, 16, 0)), bookings: [3] }
-];
 
-//The following is an example of an array of three bookings.
-var bookings = [
-    { id: 0, firstName: "John", lastName: "Doe", tel: "+3541234567", email: "", spots: 3},
-    { id: 1, firstName: "Jane", lastName: "Doe", tel: "", email: "jane@doe.doe", spots: 1},
-    { id: 2, firstName: "Meðaljón", lastName: "Jónsson", tel: "+3541111111", email: "mj@test.is", spots: 5},
-    { id: 3, firstName: "Rikki", lastName: "Rikkisson", tel: "+35312345", email: "rikki@besti.is", spots: 1}
-];
+
