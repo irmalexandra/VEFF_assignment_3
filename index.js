@@ -61,24 +61,97 @@ function findBooking(bookingsIDArr, id){
 }
 
 function createEvent(eventDetails){
+    if (validateCreateInfo(eventDetails)){
+        var dateArr = createParams.startDate.split(" ");
+        var sdate = dateArr[0]
+        var stime = dateArr[1]
+        var startDate = sdate.split("-");
+        var startTime = stime.split(":");
 
+        var dateArr = createParams.startDate.split(" ");
+        var edate = dateArr[0]
+        var etime = dateArr[1]
+        var endDate = edate.split("-");
+        var endTime = etime.split(":");
+        let event = {
+            id: generateEventID(),
+            name: eventDetails.name,
+            description: eventDetails.description,
+            location: eventDetails.location,
+            capacity: parseInt(eventDetails.capacity),
+            startDate: new Date(Date.UTC(
+                parseInt(startDate[0]),
+                parseInt(startDate[1]),
+                parseInt(startDate[2]),
+                parseInt(startTime[0]),
+                parseInt(startTime[1])
+            )),
+            endDate: new Date(Date.UTC(
+                parseInt(endDate[0]),
+                parseInt(endDate[1]),
+                parseInt(endDate[2]),
+                parseInt(endTime[0]),
+                parseInt(endTime[1])
+            )),
+            bookings: []
+        };
+        return event
+    }
+    else{
+        return -1
+    }
 }
 
+testDate = Date()
+testDate.
+
 function validateCreateInfo(createParams){
-    const isNaN = isNaN(createParams.capacity)
+    var isNaN = Number.isNaN(createParams.capacity);
+    var dateArr = createParams.startDate.split(" ");
+    var sdate = dateArr[0]
+    var stime = dateArr[1]
+    var startDate = sdate.split("-");
+    var startTime = stime.split(":");
 
+    const validStartDate = Date.UTC(
+        parseInt(startDate[0]),
+        parseInt(startDate[1]),
+        parseInt(startDate[2]),
+        parseInt(startTime[0]),
+        parseInt(startTime[1])).getTime() > 0;
 
+    var dateArr = createParams.startDate.split(" ");
+    var edate = dateArr[0]
+    var etime = dateArr[1]
+    var endDate = edate.split("-");
+    var endTime = etime.split(":");
+    const validEndDate = Date.UTC(
+        parseInt(endDate[0]),
+        parseInt(endDate[1]),
+        parseInt(endDate[2]),
+        parseInt(endTime[3]),
+        parseInt(endTime[4])).getTime() > 0;
+
+    const validCap = Number.isInteger(parseInt(createParams.capacity))
+
+    if(isNaN === false && validStartDate && validEndDate && validCap){return true}
+    return false
+}
+
+function generateEventID(){
+    return events.length
 }
 
 const createParams = {
     name: "The Wolf of Wall street",
     capacity: 30,
-    startDate: new Date(Date.UTC(2020, 03, 10, 22, 0)),
-    endDate: new Date(Date.UTC(2020, 02, 03, 00, 0)),
+    startDate: "2020-03-10 22:00:00",
+    endDate: "2020-03-10 00:00:00",
     description: "Based on the true story of Jordan Belfort",
     location: "Bio Paradís, Salur 4"
 }
 
+console.log(createEvent(createParams))
 // Endpoints //
 // ---------------------------------------------------------------------//
 
