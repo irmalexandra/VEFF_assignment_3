@@ -353,7 +353,6 @@ server.post("/api/v1/events/createEvent", (req, res) => {
     }
 });
 
-console.log("Halló")
 
 // Create Booking
 server.post("/api/v1/events/event/bookings/createBooking", (req, res) => {
