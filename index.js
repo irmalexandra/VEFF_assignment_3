@@ -317,7 +317,7 @@ function updateEvent(updatedEvent) {
 // ---------------------------------------------------------------------//
 
 // Server listener
-server.listen(port, hostname, () => {
+server.listen(port, () => {
     console.log("listening on port " + port + " and hostname " + hostname)
 });
 
