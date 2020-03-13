@@ -1,35 +1,42 @@
 // database //
 // -------------------------------------------------------------------------------------//
 
-//The following is an example of an array of two events.
 var events = [
-    { id: 430, name: "The Whistlers", description: "Romania, 2019, 97 minutes", location: "Bio Paradís, Salur 1", capacity: 40, startDate: new Date(Date.UTC(2020, 02, 03, 22, 0)), endDate: new Date(Date.UTC(2020, 02, 03, 23, 45)), bookings: [] }, // 40,23,19
-    { id: 100, name: "HarpFusion: Bach to the Future", description: "Harp ensemble", location: "Harpa, Hörpuhorn", capacity: 100, startDate: new Date(Date.UTC(2020, 02, 12, 15, 0)), endDate: new Date(Date.UTC(2020, 02, 12, 16, 0)), bookings: [20] }
+    { id: 0, name: "The Whistlers", description: "Romania, 2019, 97 minutes", location: "Bio Paradís, Salur 1", capacity: 40, startDate: new Date(Date.UTC(2020, 02, 03, 22, 0)), endDate: new Date(Date.UTC(2020, 02, 03, 23, 45)), bookings: [8,16,33] },
+    { id: 1, name: "HarpFusion: Bach to the Future", description: "Harp ensemble", location: "Harpa, Hörpuhorn", capacity: 100, startDate: new Date(Date.UTC(2020, 02, 12, 15, 0)), endDate: new Date(Date.UTC(2020, 02, 12, 16, 0)), bookings: [34,39] },
+    { id: 2, name: "third event", description: "Some place", location: "Some loc", capacity: 50, startDate: new Date(Date.UTC(2020, 03, 12, 15, 0)), endDate: new Date(Date.UTC(2020, 03, 12, 16, 0)), bookings: [77] },
+    { id: 3, name: "empty event", description: "Some place", location: "Some loc", capacity: 50, startDate: new Date(Date.UTC(2020, 03, 12, 15, 0)), endDate: new Date(Date.UTC(2020, 03, 12, 16, 0)), bookings: [] }
 ];
 
 //The following is an example of an array of three bookings.
 var bookings = [
-    { id: 40, firstName: "John", lastName: "Doe", tel: "+3541234567", email: "", spots: 3},
-    { id: 23, firstName: "Jane", lastName: "Doe", tel: "", email: "jane@doe.doe", spots: 1},
-    { id: 19, firstName: "Meðaljón", lastName: "Jónsson", tel: "+3541111111", email: "mj@test.is", spots: 5},
-    { id: 20, firstName: "Rikki", lastName: "Rikkisson", tel: "+35312345", email: "rikki@besti.is", spots: 1}
+    { id: 8, firstName: "person_08", lastName: "p08", tel: "0000008", email: "p8@", spots: 8},
+    { id: 16, firstName: "person_33", lastName: "p33", tel: "0000033", email: "p33@", spots: 3},
+    { id: 33, firstName: "person_16", lastName: "p16", tel: "0000016", email: "p16@", spots: 10},
+    { id: 34, firstName: "person_07", lastName: "p07", tel: "0000007", email: "p7@", spots: 2},
+    { id: 39, firstName: "person_22", lastName: "p22", tel: "0000022", email: "p22@", spots: 1},
+    { id: 46, firstName: "person_03", lastName: "p03", tel: "0000003", email: "p3@", spots: 0},
+    { id: 77, firstName: "person_04", lastName: "p04", tel: "0000004", email: "p4@", spots: 5}
 ];
 
 // CONSTANTS //
 const express = require('express');
-const server = express();
-
+const cors = require('cors')
 const bodyParser = require('body-parser');
 const requester = require("axios");
 
+const server = express();
+server.use(bodyParser.json());
+server.use(cors());
+
 const hostname = 'localhost';
-const port = 3232;
+const port = 3000;
 const url = "http://" + hostname + ":" + port + "/api/v1/";
 
 var eventsLength = events.length;
 var bookingsLength = bookings.length;
 
-server.use(bodyParser.json());
+
 // ---------------------------------------------------------------//
 
 // functions //
@@ -52,7 +59,7 @@ function makeEventList(){
 
 function findEvent(eventID){
     for (var i = 0; i < events.length; i++){
-        if (eventID == events[i].id) {
+        if (eventID === events[i].id) {
             return events[i]
         }
     }
@@ -69,22 +76,21 @@ function findBooking(bookingID){
 
 function findBookingForEvent(bookingsIDArr, id){
 
-    for (var i = 0; i < bookings.length; i++){
-        if (id === bookingsIDArr[i]) {
-            return bookings[id]
-        }
-        else if (i === (bookingsIDArr.length)){
-            return -1
+    if (bookingsIDArr.includes(id)){
+        for (var i = 0; i < bookings.length; i++){
+            if (id === bookings[i].id) {
+                return bookings[i]
+            }
         }
     }
     return -1
 }
 
-function makeBookingList(bookingsArr){
+function makeBookingList(bookingsIDArr){
     var eventBookingsArr = [];
     for (var i = 0; i < bookings.length; i++){
-        for(var j = 0; j < bookingsArr.length; j++){
-            if (bookings[i].id === bookingsArr[j]) {
+        for(var j = 0; j < bookingsIDArr.length; j++){
+            if (bookings[i].id === bookingsIDArr[j]) {
                 eventBookingsArr.push(bookings[i])
             }
         }
@@ -140,7 +146,7 @@ function createEvent(eventDetails){
     }
 }
 
-function createBooking(bookingDetails){
+function createBooking(bookingDetails, currentEvent){
     if(validateBookingInfo(bookingDetails)){
         if(bookingDetails.tel == undefined){bookingDetails.tel = ""}
         if(bookingDetails.email == undefined){bookingDetails.email = ""}
@@ -152,17 +158,23 @@ function createBooking(bookingDetails){
             email: bookingDetails.email,
             spots: bookingDetails.spots
         };
-        let currentEVent = findEvent(bookingDetails.eventID);
-        currentEVent.bookings.push(booking.id)
+        currentEvent.bookings.push(booking.id)
         bookings.push(booking)
         return booking
     }
-    else{
+    else {
         return -1
     }
 }
 
-function validateEventInfo(eventDetails){
+function validateID(id) {
+    if (isNaN(id)) {
+        return false
+    }
+    return true
+}
+
+function validateEventInfo(eventDetails) {
     let capOverOrEqualZero = false;
     const validStartDate = (new Date(eventDetails.startDate)).getTime() > 0;
 
@@ -175,18 +187,21 @@ function validateEventInfo(eventDetails){
     return false
 }
 
-function validateBookingInfo(bookingDetails){
+function validateBookingInfo(bookingDetails) {
     if(bookingDetails.tel != undefined || bookingDetails.email != undefined){
-        let spotsOverZero = bookingDetails.spots > 0;
-        let validSpots = false;
-        if(spotsOverZero){validSpots = checkSpots(bookingDetails.spots, bookingDetails.eventID)}
-        if(spotsOverZero && validSpots){return true}
+        if (Number.isInteger(parseInt(spots))) {
+            let spotsOverZero = bookingDetails.spots > 0;
+            let validSpots = false;
+            if(spotsOverZero){validSpots = checkSpots(bookingDetails.spots, bookingDetails.eventID)}
+            if(spotsOverZero && validSpots){return true}
+        }
     }
     return false
 
 }
 
-function checkSpots(spots, eventID){
+function checkSpots(spots, eventID) {
+    
     let currentEvent = findEvent(eventID);
     let currentBookingsIDs = currentEvent.bookings;
     let currentBookings = makeBookingList(currentBookingsIDs);
@@ -196,29 +211,30 @@ function checkSpots(spots, eventID){
     }
     availableSpots -= spots
     if(availableSpots > 0){return true}
+
     return false
 }
 
-function generateEventID(){
+function generateEventID() {
     var eventID = eventsLength
     eventsLength++
     return eventID
 }
 
-function generateBookingID(){
+function generateBookingID() {
     var bookingID = bookingsLength
     bookingsLength++
     return bookingID
 }
 
-function findArrayIndex(eventID, arr){
+function findArrayIndex(objectID, arr){
     for(var i = 0; i < arr.length; i++){
-        if(eventID === arr[i].id){return i}
+        if(objectID === arr[i].id){return i}
     }
     return -1
 }
 
-function deleteAllEvents(){
+function deleteAllEvents() {
     if(events.length > 0){
         let retEvents = [];
         for(var i = 0; i < events.length; i++){
@@ -232,35 +248,41 @@ function deleteAllEvents(){
     return -1
 }
 
-function deleteEvent(eventIDstr){
-    let eventID = parseInt(eventIDstr);
-    let retEvent = findEvent(eventID);
-    if(retEvent !== -1 && retEvent.bookings.length === 0) {
-        let eventIndex = findArrayIndex(eventID, events);
+function deleteEvent(retEvent) {
+    
+    if(retEvent.bookings.length === 0) {
+        let eventIndex = findArrayIndex(retEvent.id, events);
         if (eventIndex !== -1) {
             events.splice(eventIndex, 1);
-            return retEvent
+            return 1
         }
     }
     return -1
 }
 
-function deleteBooking(bookingIDstr){
-    let bookingID = parseInt(bookingIDstr)
-    let retBooking = findBooking(bookingID)
-    if(retBooking !== -1){
-        let bookingIndex = findArrayIndex(bookingID, bookings)
-        if(bookingIndex !== -1){
-            bookings.splice(bookingIndex, 1)
-            return retBooking
+function deleteBooking(bookingID, retEvent) {
+    let eventBookings = retEvent.bookings
+    if (eventBookings.includes(bookingID)) {
+        for (var i = 0; i < eventBookings.length; i++){
+            if (bookingID === eventBookings[i]) {
+                eventBookings.splice(i, 1)
+            }   
+        }
+        let retBooking = findBooking(bookingID)
+        if(retBooking !== -1){
+            let bookingIndex = findArrayIndex(bookingID, bookings)
+            if(bookingIndex !== -1){
+                bookings.splice(bookingIndex, 1)
+                return retBooking
+            }
         }
     }
     return -1
 }
 
-function deleteAllBookings(eventID){
+function deleteAllBookings(currentEvent) {
     if(bookings.length > 0){
-        let currentEvent = findEvent(eventID);
+        
         let retBookings = currentEvent.bookings;
         currentEvent.bookings = [];
         return retBookings;
@@ -268,19 +290,21 @@ function deleteAllBookings(eventID){
     return -1
 }
 
-function updateEvent(updatedEvent){
+function updateEvent(updatedEvent) {
     let eventID = updatedEvent.eventID
     if(eventID !== undefined){
         let currentEvent = findEvent(eventID)
-        if(currentEvent.bookings.length === 0){
-            if(validateEventInfo(updatedEvent)){
-                currentEvent.name = updatedEvent.name
-                currentEvent.capacity = updatedEvent.capacity
-                currentEvent.startDate = updatedEvent.startDate
-                currentEvent.endDate = updatedEvent.endDate
-                currentEvent.location = updatedEvent.location
-                currentEvent.description = updatedEvent.description
-                return currentEvent
+        if (currentEvent !== -1) {
+            if(currentEvent.bookings.length === 0){
+                if(validateEventInfo(updatedEvent)){
+                    currentEvent.name = updatedEvent.name
+                    currentEvent.capacity = updatedEvent.capacity
+                    currentEvent.startDate = updatedEvent.startDate
+                    currentEvent.endDate = updatedEvent.endDate
+                    currentEvent.location = updatedEvent.location
+                    currentEvent.description = updatedEvent.description
+                    return currentEvent
+                }
             }
         }
 
@@ -300,98 +324,173 @@ server.listen(port, hostname, () => {
 // Read All Events
 server.get("/api/v1/events", (req, res) => {
     eventList = makeEventList();
-    res.status(200).send(eventList);
+    
+    if (eventList.length > 0) {
+        res.status(200).send(eventList);
+    }
+    else {
+        res.status(404).send("No events found")
+    }
 });
 
 // Read Individual Event
 server.get("/api/v1/events/event/:eventID", (req, res) => {
-    var eventID = req.params.eventID;
-    var eventObj = findEvent(eventID);
 
-    res.status(200).send(eventObj);
+    if (validateID(req.params.eventID)) {
+        var eventID = parseInt(req.params.eventID);
+        var eventObj = findEvent(eventID);
+        if (eventObj != -1){
+            res.status(200).send(eventObj);
+        }
+        else {
+            res.status(404).send("No event with id " + eventID + " found.")
+        }
+    }
+    else {
+        res.status(400).send("Invalid ID format")
+    }
+
 });
 
 // Read all Bookings
 server.get("/api/v1/events/event/:eventID/bookings", (req, res) => {
-    var eventID = req.params.eventID;
-    var eventObj = findEvent(eventID);
-    var bookingsArr = eventObj.bookings;
-    var eventBookingsArr = makeBookingList(bookingsArr);
-    res.status(200).send(eventBookingsArr);
+    if (validateID(req.params.eventID)) {
+        var eventID = parseInt(req.params.eventID);
+        var eventObj = findEvent(eventID);
+        if (eventObj != -1){
+            var bookingsArr = eventObj.bookings;
+            if (bookingsArr.length > 0){
+                var eventBookingsArr = makeBookingList(bookingsArr);
+                res.status(200).send(eventBookingsArr);
+            }
+            else {
+                res.status(404).send("No bookings found for this event.")
+            }
+        }
+        else {
+            res.status(404).send("No event with id " + eventID + " found.")
+        } 
+    }
+    else {
+        res.status(400).send("Invalid ID format")
+    }
+
 });
 
 // Read Individual Booking
 server.get("/api/v1/events/event/:eventID/bookings/booking/:bookingID", (req, res) => {
-    eventID = req.params.eventID;
-    if (findEvent(eventID) !== -1) {
-        var bookingID = req.params.bookingID;
-        var eventObj = findEvent(eventID);
-        var bookingsIDArr = eventObj.bookings;
-        var booking = findBookingForEvent(bookingsIDArr, bookingID);
-        if (booking !== -1){
-            res.status(200).send(booking);
+    if (validateID(req.params.eventID) && validateID(req.params.bookingID)) {
+        let eventID = parseInt(req.params.eventID)
+        if (findEvent(eventID) !== -1) {
+            var bookingID = parseInt(req.params.bookingID);
+            var eventObj = findEvent(eventID);
+            var bookingsIDArr = eventObj.bookings;
+            var booking = findBookingForEvent(bookingsIDArr, bookingID);
+            if (booking !== -1){
+                res.status(200).send(booking);
+            }
+            else {
+                res.status(404).send("Booking not found for this event.")
+            }
         }
         else {
-            res.status(404).send("Booking not found for this event.")
+            res.status(404).send("No event with id " + eventID + " found.")
         }
     }
     else {
-        res.status(404).send("Event not found.")
+        res.status(400).send("Invalid ID format")
     }
 });
 
 // Create Event
-server.post("/api/v1/events/createEvent", (req, res) => {
-    var eventParams = req.body;
-    var retEvent = createEvent(eventParams);
-    console.log('RetEvent: ' + retEvent);
+server.post("/api/v1/events", (req, res) => {
+    var eventDetails = req.body;
+    var retEvent = createEvent(eventDetails);
     if(retEvent !== -1){
         res.status(201).send(retEvent)
     }
     else{
-        res.status(400).send("Invalid event info")
+        res.status(400).send("Invalid event info.")
     }
 });
 
-
 // Create Booking
-server.post("/api/v1/events/event/bookings/createBooking", (req, res) => {
-    var bookingParams = req.body;
-    var retBooking = createBooking(bookingParams);
-    if(retBooking !== -1){
-        res.status(201).send(retBooking)
+server.post("/api/v1/events/event/bookings", (req, res) => {
+    var bookingDetails = req.body;
+    if (validateID(bookingDetails.eventID)) {
+        var eventID = parseInt(bookingDetails.eventID)
+        let currentEvent = findEvent(eventID);
+        if (currentEvent !== -1) {
+            
+            var retBooking = createBooking(bookingDetails, currentEvent);
+
+            if(retBooking !== -1){
+                res.status(201).send(retBooking)
+            }
+            else{
+                res.status(400).send("Invalid booking info.")
+            }
+        }
+        else {
+            res.status(404).send("No event with id " + eventID + " found.")
+        }
     }
-    else{
-        res.status(400).send("Invalid booking info")
+    else {
+        res.status(400).send("Invalid ID format")
     }
 });
 
 // Delete Event
-server.delete("/api/v1/events/event/:eventID/deleteEvent", (req , res) => {
-    let eventID = req.params.eventID
-    let retEvent = deleteEvent(eventID)
-    if(retEvent !== -1){
-        res.status(200).send(retEvent)
+server.delete("/api/v1/events/event/:eventID", (req , res) => {
+    if (validateID(req.params.eventID)) {
+        let eventID = parseInt(req.params.eventID)
+        let retEvent = findEvent(eventID);
+        if (retEvent !== -1) {
+            ifSuccess = deleteEvent(retEvent)
+
+            if (ifSuccess !== -1) {
+                res.status(200).send(retEvent)
+            }
+            else {
+                res.status(404).send("There are bookings for this event.")
+            }
+        }
+        else {
+            res.status(404).send("No event with id " + eventID + " found.")
+        }
     }
-    else{
-        res.status(400).send("Invalid event info")
+    else {
+        res.status(400).send("Invalid ID format")
     }
 });
 
 // Delete Booking
-server.delete("/api/v1/events/event/:eventID/bookings/booking/:bookingID/deleteBooking", (req, res) => {
-    let bookingID = req.params.bookingID
-    let retBooking = deleteBooking(bookingID)
-    if(retBooking !== -1){
-        res.status(200).send(retBooking)
+server.delete("/api/v1/events/event/:eventID/bookings/booking/:bookingID", (req, res) => {
+    if (validateID(req.params.eventID) && validateID(req.params.eventID)) {
+        let eventID = parseInt(req.params.eventID)
+        let retEvent = findEvent(eventID)
+        if(retEvent !== -1){
+            
+            let bookingID = parseInt(req.params.bookingID)
+            let retBooking = deleteBooking(bookingID, retEvent)
+            if(retBooking !== -1){
+                res.status(200).send(retBooking)
+            }
+            else{
+                res.status(400).send("Invalid booking info")
+            }
+        }
+        else {
+            res.status(404).send("No event with id " + eventID + " found.")
+        }
     }
-    else{
-        res.status(400).send("Invalid booking info")
+    else {
+        res.status(400).send("Invalid ID format")
     }
 });
 
 // Delete All Events
-server.delete("/api/v1/events/deleteAllEvents", (req, res) =>{
+server.delete("/api/v1/events", (req, res) =>{
     let retEvents = deleteAllEvents()
     if(retEvents !== -1){
         res.status(200).send(retEvents)
@@ -402,36 +501,36 @@ server.delete("/api/v1/events/deleteAllEvents", (req, res) =>{
 });
 
 // Delete all bookings for event
-server.delete("/api/v1/events/event/:eventID/bookings/deleteAllBookings", (req, res) => {
-    let eventID = req.params.eventID
-    let retBookings = deleteAllBookings(eventID)
-    if(retBookings !== -1){
-        res.status(200).send(retBookings)
-    }
-    else{
-        res.status(400).send("Error when deleting all bookings for event "+ eventID)
-    }
-});
+server.delete("/api/v1/events/event/:eventID/bookings", (req, res) => {
+    if (validateID(req.params.eventID)) {
+        let eventID = parseInt(req.params.eventID)
+        let retEvent = findEvent(eventID);
+        if (retEvent !== -1) {
 
-// Delete Booking
-server.delete("/api/v1/events/event/:eventID/bookings/booking/:bookingID/deleteBooking", (req, res) => {
-    let bookingID = req.params.bookingID
-    let retBooking = deleteBooking(bookingID)
-    if(retBooking !== -1){
-        res.status(200).send(retBooking)
+            let retBookings = deleteAllBookings(retEvent)
+            if(retBookings !== -1) {
+                res.status(200).send(retBookings)
+            }
+            else {
+                res.status(400).send("Error when deleting all bookings for event "+ eventID)
+            }
+        }
+        else {
+            res.status(404).send("No event with id " + eventID + " found.")
+        }
     }
-    else{
-        res.status(400).send("Invalid booking info")
+    else {
+        res.status(400).send("Invalid ID format")
     }
 });
 
 // Update
-server.put("/api/v1/events/event/updateEvent", (req, res) => {
+server.put("/api/v1/events/event", (req, res) => {
     let updatedEvent = updateEvent(req.body)
-    if(updatedEvent !== -1){
+    if(updatedEvent !== -1) {
         res.status(200).send(updatedEvent)
     }
-    else{
+    else {
         res.status(400).send(updatedEvent)
     }
 
@@ -443,136 +542,337 @@ server.use("*", (req, res) => {
 });
 
 
-
-
 // requests //
 // ----------------------------------------------------------------------- //
 //
 
-// requester.put(url+"events/event/updateEvent", {
-//     eventID : 430,
-//     name : "newNAme",
-//     capacity : 200,
-//     location : "Emils house?",
-//     description: "newdesc",
-//     startDate: new Date(Date.UTC(20150, 02, 03, 22, 0)),
-//     endDate: new Date(Date.UTC(2120, 02, 03, 23, 45))
-// })
-//     .then((res) => {
-//         console.log("updated event : " + res.data)
-//     })
-//     .catch((error) => {
-//         console.log(("Error while updating event: "+error))
-//     });
 
-// requester.delete(url + "events/deleteAllEVents")
-//     .then((res) => {
-//         console.log("Delete all events successful")
-//         console.log("Events deleted :"+ res.data)
-//     })
-//     .catch((error) => {
-//         console.log("Delete all events not successfull")
-//         console.log("error is "+ error)
-//     })
+requester.get(url + "events", {
+    })
+    .then((res) => {
+        console.log("displaying all events successful");
+        console.log("Event list: \n" + res.data)
+    })
+    .catch((error) =>{
+        console.log("displaying all events unsuccessful");
+        console.log("error res: " + error)
+    });
 
-// requester.delete(url+"events/event/100/bookings/booking/23/deleteBooking")
-//     .then((res) => {
-//         console.log("Deleted booking: "+res.data)
-//     })
-//     .catch((error) => {
-//         console.log("delete booking response error")
-//         console.log("error is: "+ error)
-//     });
+requester.get(url + "events/event/0", {
+    })
+    .then((res) => {
+        console.log("Specific event: \n" + res.data)
+    })
+    .catch((error) =>{
+        console.log("specific event response error");
+        console.log("error res is: " + error)
+    });
 
-// requester.delete(url+"events/event/430/bookings/deleteAllBookings")
-//     .then((res) => {
-//         console.log("Deleted all bookings for event")
-//     })
-//     .catch((error) => {
-//         console.log("Delete all bookings error")
-//         console.log("Error is:"+error)
-//     })
+requester.get(url + "events/event/sdsad", {
+    })
+    .then((res) => {
+        console.log("Specific event: \n" + res.data)
+    })
+    .catch((error) =>{
+        console.log("specific event response error");
+        console.log("error res is: " + error)
+    });
 
-// requester.post(url + "events/event/bookings/createBooking",{
-//     eventID: 0,
-//     firstName: "Loki",
-//     lastName: "LOKI!",
-//     tel: 123467,
-//     spots: 5
-// })
-//     .then((res) => {
-//         console.log("Create booking : \n" + res.data)
-//     })
-//     .catch((error) => {
-//         console.log("create booking response error");
-//         console.log("error res is: " + error)
-//     });
 
-// requester.delete(url+"events/event/100/deleteEVent")
-// //     .then((res) => {
-// //         console.log("Deleted event: "+res.data)
-// //     })
-// //     .catch((error) => {
-// //         console.log("delete event response error")
-// //         console.log("error is: "+ error)
-// //     });
+requester.get(url + "events/event/0/bookings", {
 
-// requester.post(url + "events/createEvent",{
-//     name: "The Wolf of Wall Street",
-//     capacity: "40",
-//     startDate: "2020-03-10 22:30:00",
-//     endDate: "2020-03-11 00:45:00",
-//     description: "Based on the true story of Jordan Belfort",
-//     location: "Egilshöll Salur 1"})
-//     .then((res) => {
-//         console.log("Specific booking for event: \n" + res.data)
-//     })
-//     .catch((error) => {
-//         console.log("create event response error");
-//         console.log("error res is: " + error)
-//     });
-//
-//
-//
-// requester.get(url + "events", {
-// })
-// .then((res) => {
-//     console.log("get response is working");
-//     console.log("Event list: \n" + res.data)
-// })
-// .catch((error) =>{
-//     console.log("event list response error");
-//     console.log("error res: " + error)
-// })
-//
-// requester.get(url + "events/event/1")
-// .then((res) => {
-//     console.log("Specific event: \n" + res.data)
-// })
-// .catch((error) =>{
-//     console.log("specific event response error");
-//     console.log("error res is: " + error)
-// });
-//
-// requester.get(url + "events/event/0/bookings")
-// .then((res) => {
-//     console.log("Bookings for event: \n" + res.data)
-// })
-// .catch((error) =>{
-//     console.log("bookings for event response error");
-//     console.log("error res is: " + error)
-// });
-//
-// requester.get(url + "events/event/1/bookings/booking/3")
-// .then((res) => {
-//     console.log("Specific booking for event: \n" + res.data)
-// })
-// .catch((error) => {
-//     console.log("specific booking response error");
-//     console.log("error res is: " + error)
-// });
-//
-//
-//
+    })
+    .then((res) => {
+        console.log("list of bookings for event: \n" + res.data)
+    })
+    .catch((error) => {
+        console.log ("specific event booking list error")
+        console.log ("error is " + error)
+    });
+
+requester.get(url + "events/event/dsadas/bookings", {
+
+    })
+    .then((res) => {
+        console.log("list of bookings for event: \n" + res.data)
+    })
+    .catch((error) => {
+        console.log ("specific event booking list error")
+        console.log ("error is " + error)
+    });
+
+requester.get(url + "events/event/0/bookings/booking/16", {
+
+})
+    .then((res) => {
+        console.log("booking for event: \n" + res.data)
+    })
+    .catch((error) => {
+        console.log ("specific event booking error")
+        console.log ("error is " + error)
+    });
+
+
+requester.get(url + "events/event/sdasd/bookings/booking/16", {
+})
+    .then((res) => {
+        console.log("booking for event: \n" + res.data)
+    })
+    .catch((error) => {
+        console.log ("specific event booking error")
+        console.log ("error is " + error)
+    });
+
+requester.get(url + "events/event/0/bookings/booking/23123asdasdas6", {
+})
+    .then((res) => {
+        console.log("booking for event: \n" + res.data)
+    })
+    .catch((error) => {
+        console.log ("specific event booking error")
+        console.log ("error is " + error)
+    });
+    
+
+requester.post(url + "events",{
+    name: "created event",
+    capacity: "40",
+    startDate: "2020-03-10 22:30:00",
+    endDate: "2020-03-11 00:45:00",
+    description: "Based on the true story of Jordan Belfort",
+    location: "Egilshöll Salur 1"})
+    .then((res) => {
+        console.log("event created: \n" + res.data)
+    })
+    .catch((error) => {
+        console.log("create event response error");
+        console.log("error res is: " + error)
+    });
+requester.post(url + "events",{
+    name: "created event",
+    capacity: "dsdasdas",
+    startDate: "2020-03-10 22:30:00",
+    endDate: "2020-03-11 00:45:00",
+    description: "Based on the true story of Jordan Belfort",
+    location: "Egilshöll Salur 1"})
+    .then((res) => {
+        console.log("event created: \n" + res.data)
+    })
+    .catch((error) => {
+        console.log("create event response error");
+        console.log("error res is: " + error)
+    });
+
+requester.put(url+"events/event", {
+    eventID : 4,
+    name : "updated create event",
+    capacity : 200,
+    location : "Emils house?",
+    description: "newdesc",
+    startDate: new Date(Date.UTC(20150, 02, 03, 22, 0)),
+    endDate: new Date(Date.UTC(2120, 02, 03, 23, 45))
+    })
+    .then((res) => {
+        console.log("updated event : " + res.data)
+    })
+    .catch((error) => {
+        console.log(("Error while updating event: "+error))
+    });
+
+requester.post(url + "events/event/bookings",{
+    eventID: 4,
+    firstName: "Loki",
+    lastName: "LOKI!",
+    tel: 123467,
+    spots: 5
+})
+.then((res) => {
+    console.log("Create booking : \n" + res.data)
+})
+.catch((error) => {
+    console.log("create booking response error");
+    console.log("error res is: " + error)
+});
+
+requester.post(url + "events/event/bookings",{
+    eventID: 4,
+    firstName: "Loki",
+    lastName: "LOKI!",
+    tel: 123467,
+    spots: 'sdasd'
+})
+    .then((res) => {
+        console.log("Create booking : \n" + res.data)
+    })
+    .catch((error) => {
+        console.log("create booking response error");
+        console.log("error res is: " + error)
+    });
+
+requester.post(url + "events/event/bookings",{
+    eventID: 'sads',
+    firstName: "Loki",
+    lastName: "LOKI!",
+    tel: 123467,
+    spots: 5
+})
+    .then((res) => {
+        console.log("Create booking : \n" + res.data)
+    })
+    .catch((error) => {
+        console.log("create booking response error");
+        console.log("error res is: " + error)
+    });
+
+requester.get(url + "events", {
+    })
+    .then((res) => {
+        console.log("get response is working");
+        console.log("Event list: \n" + res.data)
+    })
+    .catch((error) =>{
+        console.log("event list response error");
+        console.log("error res: " + error)
+    })
+
+
+requester.get(url + "events/event/4")
+    .then((res) => {
+        console.log("Specific event: \n" + res.data)
+    })
+    .catch((error) =>{
+        console.log("specific event response error");
+        console.log("error res is: " + error)
+    });
+
+requester.get(url + "events/event/sdasd")
+    .then((res) => {
+        console.log("Specific event: \n" + res.data)
+    })
+    .catch((error) =>{
+        console.log("specific event response error");
+        console.log("error res is: " + error)
+    });
+
+requester.delete(url+"events/event/0")
+    .then((res) => {
+        console.log("Deleted event: "+res.data)
+    })
+    .catch((error) => {
+        console.log("delete event response error")
+        console.log("error is: "+ error)
+    });
+
+
+requester.delete(url+"events/event/dasdas")
+    .then((res) => {
+        console.log("Deleted event: "+res.data)
+    })
+    .catch((error) => {
+        console.log("delete event response error")
+        console.log("error is: "+ error)
+    });
+
+requester.delete(url+"events/event/4")
+    .then((res) => {
+        console.log("Deleted event: "+res.data)
+    })
+    .catch((error) => {
+        console.log("delete event response error")
+        console.log("error is: "+ error)
+    });
+
+requester.delete(url+"events/event/4/bookings/booking/7")
+    .then((res) => {
+        console.log("Deleted booking: "+res.data)
+    })
+    .catch((error) => {
+        console.log("delete booking response error")
+        console.log("error is: "+ error)
+    });
+
+requester.delete(url+"events/event/4")
+    .then((res) => {
+        console.log("Deleted event: "+res.data)
+    })
+    .catch((error) => {
+        console.log("delete event response error")
+        console.log("error is: "+ error)
+    });
+
+requester.get(url + "events", {
+    })
+    .then((res) => {
+        console.log("get response is working");
+        console.log("Event list: \n" + res.data)
+    })
+    .catch((error) =>{
+        console.log("event list response error");
+        console.log("error res: " + error)
+    })
+
+requester.delete(url+"events/event/0/bookings")
+    .then((res) => {
+        console.log("Deleted all bookings for event")
+    })
+    .catch((error) => {
+        console.log("Delete all bookings error")
+        console.log("Error is:"+error)
+    })
+
+requester.delete(url+"events/event/0")
+    .then((res) => {
+        console.log("Deleted event: "+res.data)
+    })
+    .catch((error) => {
+        console.log("delete event response error")
+        console.log("error is: "+ error)
+    });
+
+requester.delete(url+"events/event/2/bookings/booking/77")
+    .then((res) => {
+        console.log("Deleted booking: "+res.data)
+    })
+    .catch((error) => {
+        console.log("delete booking response error")
+        console.log("error is: "+ error)
+    });
+
+requester.delete(url+"events/event/2")
+    .then((res) => {
+        console.log("Deleted event: "+res.data)
+    })
+    .catch((error) => {
+        console.log("delete event response error")
+        console.log("error is: "+ error)
+    });
+
+requester.delete(url + "events")
+    .then((res) => {
+        console.log("Delete all events successful")
+        console.log("Events deleted :"+ res.data)
+    })
+    .catch((error) => {
+        console.log("Delete all events not successfull")
+        console.log("error is "+ error)
+    })
+
+
+requester.get(url + "evsdasdasdasdas")
+    .then((res) => {
+        console.log()
+        console.log(res.data)
+    })
+    .catch((error) => {
+        console.log("error is "+ error)
+    })
+
+
+
+
+
+
+
+
 
 

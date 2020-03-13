@@ -492,3 +492,9 @@ node_modules/validate-npm-package-license/package.json
 node_modules/validate-npm-package-license/README.md
 package-lock.json
 package.json
+node_modules/cors/CONTRIBUTING.md
+node_modules/cors/HISTORY.md
+node_modules/cors/LICENSE
+node_modules/cors/package.json
+node_modules/cors/README.md
+node_modules/cors/lib/index.js
