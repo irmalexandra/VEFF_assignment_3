@@ -1,1 +1,1 @@
-web:node otherindex.js
+web: npm start
