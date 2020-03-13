@@ -29,7 +29,7 @@ server.use(bodyParser.json());
 server.use(cors());
 
 const hostname = 'localhost';
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 var eventsLength = events.length;
 var bookingsLength = bookings.length;
