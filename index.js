@@ -28,7 +28,6 @@ const server = express();
 server.use(bodyParser.json());
 server.use(cors());
 
-const hostname = 'localhost';
 const port = process.env.PORT || 3000;
 
 var eventsLength = events.length;
@@ -318,7 +317,7 @@ function updateEvent(updatedEvent) {
 
 // Server listener
 server.listen(port, () => {
-    console.log("listening on port " + port + " and hostname " + hostname)
+    console.log("listening on port " + port)
 });
 
 // Read All Events
