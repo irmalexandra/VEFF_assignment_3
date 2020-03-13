@@ -23,7 +23,6 @@ var bookings = [
 const express = require('express');
 const cors = require('cors')
 const bodyParser = require('body-parser');
-const requester = require("axios");
 
 const server = express();
 server.use(bodyParser.json());
@@ -31,7 +30,6 @@ server.use(cors());
 
 const hostname = 'localhost';
 const port = 3000;
-const url = "http://" + hostname + ":" + port + "/api/v1/";
 
 var eventsLength = events.length;
 var bookingsLength = bookings.length;
@@ -189,7 +187,7 @@ function validateEventInfo(eventDetails) {
 
 function validateBookingInfo(bookingDetails) {
     if(bookingDetails.tel != undefined || bookingDetails.email != undefined){
-        if (Number.isInteger(parseInt(spots))) {
+        if (Number.isInteger(parseInt(bookingDetails.spots))) {
             let spotsOverZero = bookingDetails.spots > 0;
             let validSpots = false;
             if(spotsOverZero){validSpots = checkSpots(bookingDetails.spots, bookingDetails.eventID)}
@@ -243,6 +241,7 @@ function deleteAllEvents() {
         }
         retEvents = events;
         events = []
+        bookings = []
         return retEvents;
     }
     return -1
@@ -283,8 +282,9 @@ function deleteBooking(bookingID, retEvent) {
 function deleteAllBookings(currentEvent) {
     if(bookings.length > 0){
         
-        let retBookings = currentEvent.bookings;
+        let retBookingsIDs = currentEvent.bookings;
         currentEvent.bookings = [];
+        let retBookings = makeBookingList(retBookingsIDs)
         return retBookings;
     }
     return -1
@@ -452,7 +452,7 @@ server.delete("/api/v1/events/event/:eventID", (req , res) => {
                 res.status(200).send(retEvent)
             }
             else {
-                res.status(404).send("There are bookings for this event.")
+                res.status(400).send("There are bookings for this event.")
             }
         }
         else {
@@ -526,13 +526,21 @@ server.delete("/api/v1/events/event/:eventID/bookings", (req, res) => {
 
 // Update
 server.put("/api/v1/events/event", (req, res) => {
-    let updatedEvent = updateEvent(req.body)
-    if(updatedEvent !== -1) {
-        res.status(200).send(updatedEvent)
+    const eventID = req.body.eventID
+    if (validateID(eventID)){
+        let updatedEvent = updateEvent(req.body)
+
+        if(updatedEvent !== -1) {
+            res.status(200).send(updatedEvent)
+        }
+        else {
+            res.status(400).send("Invalid update info")
+        }
     }
     else {
-        res.status(400).send(updatedEvent)
+        res.status(400).send("Invalid ID format")
     }
+
 
 });
 
@@ -540,339 +548,6 @@ server.put("/api/v1/events/event", (req, res) => {
 server.use("*", (req, res) => {
     res.status(405).send("This request is not allowed.")
 });
-
-
-// requests //
-// ----------------------------------------------------------------------- //
-//
-
-
-requester.get(url + "events", {
-    })
-    .then((res) => {
-        console.log("displaying all events successful");
-        console.log("Event list: \n" + res.data)
-    })
-    .catch((error) =>{
-        console.log("displaying all events unsuccessful");
-        console.log("error res: " + error)
-    });
-
-requester.get(url + "events/event/0", {
-    })
-    .then((res) => {
-        console.log("Specific event: \n" + res.data)
-    })
-    .catch((error) =>{
-        console.log("specific event response error");
-        console.log("error res is: " + error)
-    });
-
-requester.get(url + "events/event/sdsad", {
-    })
-    .then((res) => {
-        console.log("Specific event: \n" + res.data)
-    })
-    .catch((error) =>{
-        console.log("specific event response error");
-        console.log("error res is: " + error)
-    });
-
-
-requester.get(url + "events/event/0/bookings", {
-
-    })
-    .then((res) => {
-        console.log("list of bookings for event: \n" + res.data)
-    })
-    .catch((error) => {
-        console.log ("specific event booking list error")
-        console.log ("error is " + error)
-    });
-
-requester.get(url + "events/event/dsadas/bookings", {
-
-    })
-    .then((res) => {
-        console.log("list of bookings for event: \n" + res.data)
-    })
-    .catch((error) => {
-        console.log ("specific event booking list error")
-        console.log ("error is " + error)
-    });
-
-requester.get(url + "events/event/0/bookings/booking/16", {
-
-})
-    .then((res) => {
-        console.log("booking for event: \n" + res.data)
-    })
-    .catch((error) => {
-        console.log ("specific event booking error")
-        console.log ("error is " + error)
-    });
-
-
-requester.get(url + "events/event/sdasd/bookings/booking/16", {
-})
-    .then((res) => {
-        console.log("booking for event: \n" + res.data)
-    })
-    .catch((error) => {
-        console.log ("specific event booking error")
-        console.log ("error is " + error)
-    });
-
-requester.get(url + "events/event/0/bookings/booking/23123asdasdas6", {
-})
-    .then((res) => {
-        console.log("booking for event: \n" + res.data)
-    })
-    .catch((error) => {
-        console.log ("specific event booking error")
-        console.log ("error is " + error)
-    });
-    
-
-requester.post(url + "events",{
-    name: "created event",
-    capacity: "40",
-    startDate: "2020-03-10 22:30:00",
-    endDate: "2020-03-11 00:45:00",
-    description: "Based on the true story of Jordan Belfort",
-    location: "Egilshöll Salur 1"})
-    .then((res) => {
-        console.log("event created: \n" + res.data)
-    })
-    .catch((error) => {
-        console.log("create event response error");
-        console.log("error res is: " + error)
-    });
-requester.post(url + "events",{
-    name: "created event",
-    capacity: "dsdasdas",
-    startDate: "2020-03-10 22:30:00",
-    endDate: "2020-03-11 00:45:00",
-    description: "Based on the true story of Jordan Belfort",
-    location: "Egilshöll Salur 1"})
-    .then((res) => {
-        console.log("event created: \n" + res.data)
-    })
-    .catch((error) => {
-        console.log("create event response error");
-        console.log("error res is: " + error)
-    });
-
-requester.put(url+"events/event", {
-    eventID : 4,
-    name : "updated create event",
-    capacity : 200,
-    location : "Emils house?",
-    description: "newdesc",
-    startDate: new Date(Date.UTC(20150, 02, 03, 22, 0)),
-    endDate: new Date(Date.UTC(2120, 02, 03, 23, 45))
-    })
-    .then((res) => {
-        console.log("updated event : " + res.data)
-    })
-    .catch((error) => {
-        console.log(("Error while updating event: "+error))
-    });
-
-requester.post(url + "events/event/bookings",{
-    eventID: 4,
-    firstName: "Loki",
-    lastName: "LOKI!",
-    tel: 123467,
-    spots: 5
-})
-.then((res) => {
-    console.log("Create booking : \n" + res.data)
-})
-.catch((error) => {
-    console.log("create booking response error");
-    console.log("error res is: " + error)
-});
-
-requester.post(url + "events/event/bookings",{
-    eventID: 4,
-    firstName: "Loki",
-    lastName: "LOKI!",
-    tel: 123467,
-    spots: 'sdasd'
-})
-    .then((res) => {
-        console.log("Create booking : \n" + res.data)
-    })
-    .catch((error) => {
-        console.log("create booking response error");
-        console.log("error res is: " + error)
-    });
-
-requester.post(url + "events/event/bookings",{
-    eventID: 'sads',
-    firstName: "Loki",
-    lastName: "LOKI!",
-    tel: 123467,
-    spots: 5
-})
-    .then((res) => {
-        console.log("Create booking : \n" + res.data)
-    })
-    .catch((error) => {
-        console.log("create booking response error");
-        console.log("error res is: " + error)
-    });
-
-requester.get(url + "events", {
-    })
-    .then((res) => {
-        console.log("get response is working");
-        console.log("Event list: \n" + res.data)
-    })
-    .catch((error) =>{
-        console.log("event list response error");
-        console.log("error res: " + error)
-    })
-
-
-requester.get(url + "events/event/4")
-    .then((res) => {
-        console.log("Specific event: \n" + res.data)
-    })
-    .catch((error) =>{
-        console.log("specific event response error");
-        console.log("error res is: " + error)
-    });
-
-requester.get(url + "events/event/sdasd")
-    .then((res) => {
-        console.log("Specific event: \n" + res.data)
-    })
-    .catch((error) =>{
-        console.log("specific event response error");
-        console.log("error res is: " + error)
-    });
-
-requester.delete(url+"events/event/0")
-    .then((res) => {
-        console.log("Deleted event: "+res.data)
-    })
-    .catch((error) => {
-        console.log("delete event response error")
-        console.log("error is: "+ error)
-    });
-
-
-requester.delete(url+"events/event/dasdas")
-    .then((res) => {
-        console.log("Deleted event: "+res.data)
-    })
-    .catch((error) => {
-        console.log("delete event response error")
-        console.log("error is: "+ error)
-    });
-
-requester.delete(url+"events/event/4")
-    .then((res) => {
-        console.log("Deleted event: "+res.data)
-    })
-    .catch((error) => {
-        console.log("delete event response error")
-        console.log("error is: "+ error)
-    });
-
-requester.delete(url+"events/event/4/bookings/booking/7")
-    .then((res) => {
-        console.log("Deleted booking: "+res.data)
-    })
-    .catch((error) => {
-        console.log("delete booking response error")
-        console.log("error is: "+ error)
-    });
-
-requester.delete(url+"events/event/4")
-    .then((res) => {
-        console.log("Deleted event: "+res.data)
-    })
-    .catch((error) => {
-        console.log("delete event response error")
-        console.log("error is: "+ error)
-    });
-
-requester.get(url + "events", {
-    })
-    .then((res) => {
-        console.log("get response is working");
-        console.log("Event list: \n" + res.data)
-    })
-    .catch((error) =>{
-        console.log("event list response error");
-        console.log("error res: " + error)
-    })
-
-requester.delete(url+"events/event/0/bookings")
-    .then((res) => {
-        console.log("Deleted all bookings for event")
-    })
-    .catch((error) => {
-        console.log("Delete all bookings error")
-        console.log("Error is:"+error)
-    })
-
-requester.delete(url+"events/event/0")
-    .then((res) => {
-        console.log("Deleted event: "+res.data)
-    })
-    .catch((error) => {
-        console.log("delete event response error")
-        console.log("error is: "+ error)
-    });
-
-requester.delete(url+"events/event/2/bookings/booking/77")
-    .then((res) => {
-        console.log("Deleted booking: "+res.data)
-    })
-    .catch((error) => {
-        console.log("delete booking response error")
-        console.log("error is: "+ error)
-    });
-
-requester.delete(url+"events/event/2")
-    .then((res) => {
-        console.log("Deleted event: "+res.data)
-    })
-    .catch((error) => {
-        console.log("delete event response error")
-        console.log("error is: "+ error)
-    });
-
-requester.delete(url + "events")
-    .then((res) => {
-        console.log("Delete all events successful")
-        console.log("Events deleted :"+ res.data)
-    })
-    .catch((error) => {
-        console.log("Delete all events not successfull")
-        console.log("error is "+ error)
-    })
-
-
-requester.get(url + "evsdasdasdasdas")
-    .then((res) => {
-        console.log()
-        console.log(res.data)
-    })
-    .catch((error) => {
-        console.log("error is "+ error)
-    })
-
-
-
-
-
-
-
 
 
 
